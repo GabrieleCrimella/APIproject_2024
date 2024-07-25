@@ -1,0 +1,38 @@
+# Compiled object files
+*.o
+
+# Compiled binary files
+main
+
+# Precompiled headers
+*.gch
+
+# Debug files
+*.dSYM/
+*.debug
+
+# Output files
+*.out
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*.bak
+*.pid
+
+# Directories
+gen/
+
+# PDF files (optional, if you do not want to track PDF documentation)
+*.pdf
+
+# Dependency directories
+node_modules/
+build/
+dist/
+
+# System files
+.DS_Store
+Thumbs.db
