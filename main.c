@@ -266,6 +266,20 @@ void rifornimento(char ingrediente[MAX+1]) {
 }
 
 unsigned int ordina(char ricetta[MAX+1]) {
+	//s_ingrediente *ricetta;
+
+	//acquisisci il numero di ricette che si vogliono ordinare
+
+	//calcola peso della ricetta e moltiplicalo per il numero
+
+	//per ognuno degli ingredienti contenuto in 'ricetta':
+		//azzera l'accumulatore intero senza segno
+
+		//fai passare tutto lo stoccaggio presente in magazzino riguardo quell'ordine
+			//se è scaduto, escludi quello stoccaggio, anzi eliminalo
+			//se non è scaduto, aumenta l'accumulatore
+			//se OK l'accumulatore prima della fine dello stoccaggio, passa al prossimo ingrediente
+			//se non OK, cioè c'è null dopo e l'accumulatore non è sufficiente, allora AGGIUNGI L'ORDINE IN CODA
 	return 0;
 }
 
@@ -286,5 +300,5 @@ void corriere() {
 
 void check_ordini(){
 	printf("check_ordini");
-	
+
 }
