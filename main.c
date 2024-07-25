@@ -6,13 +6,13 @@
 
 typedef struct _ingrediente {
 	char nome_ingrediente[MAX+1];
-	int quantita;
+	unsigned int quantita;
 	struct _ingrediente *next;
-} s_ingredienti;
+} s_ingrediente;
 
 typedef struct _stoc_ingredienti {
-	int qta;
-	int scadenza;
+	unsigned int qta;
+	unsigned int scadenza;
 	struct _stoc_ingredienti *prev, *next;
 } s_stoccaggio;
 
@@ -24,39 +24,42 @@ typedef struct _magazzino {
 
 typedef struct _ricetta {
 	char nome_ricetta[MAX+1];
-	s_ingredienti *ingredienti;
+	s_ingrediente *ingredienti;
 	struct _ricetta *left, *right, *p;
 } s_ricette;
 
 typedef struct _ordini {
-	int tempo;
+	unsigned int tempo;
 	char nome_ricetta[MAX+1];
-	int qta;
+	unsigned int numero;
+	unsigned int peso_totale;
 	struct _ordini *next;
 } s_ordini;
 
-int acquisisci_comando(char[MAX+1]);
+unsigned int acquisisci_comando(char[MAX+1]);
 void aggiungi_ricetta(char[MAX+1], char[MAX+1]);
 void rimuovi_ricetta(char[MAX+1]);
 void rifornimento(char[MAX+1]);
-int ordina(char[MAX+1]);
+unsigned int ordina(char[MAX+1]);
 void corriere();
-int esiste_ricetta(s_ricette*, char[MAX+1]);
+unsigned int esiste_ricetta(s_ricette*, char[MAX+1]);
 s_ricette* esiste_ricetta_ret(s_ricette*, char [MAX+1]);
 void non_aggiungi_ricetta(char[MAX+1]);
 void check_ordini();
-s_ingredienti* get_ricetta(char [MAX+1]);
+s_ingrediente* get_ricetta(char [MAX+1]);
+s_magazzino * cerca_nel_magazzino(s_magazzino *, char [MAX+1]);
+void aggiungi_in_coda(s_ordini*);
 
 s_ordini *ordini, *coda;
 s_ricette *ricettario;
 s_magazzino *magazzino;
-int stop;
+unsigned int stop;
+unsigned int tempo = 0;
 
 int main() {
 	
 	char comando[MAX+1];
-	int periodo, capienza;
-	int tempo = 0;
+	unsigned int periodo, capienza;
 	char ricetta[MAX+1];
 	
 	if(scanf("%d %d\n", &periodo, &capienza) <= 0) {
@@ -106,11 +109,11 @@ int main() {
 	return 0;
 }
 
-int acquisisci_comando(char stringa[MAX+1]) {
+unsigned int acquisisci_comando(char stringa[MAX+1]) {
 	return scanf("%s",stringa);
 }
 
-int esiste_ricetta(s_ricette *T, char ricetta[MAX+1]) {
+unsigned int esiste_ricetta(s_ricette *T, char ricetta[MAX+1]) {
 	if(T == NULL)
 		return 0;
 	if (strcmp(T->nome_ricetta,ricetta) == 0) 
@@ -124,8 +127,8 @@ s_ricette* esiste_ricetta_ret(s_ricette *T, char ricetta[MAX+1]) {
 	if(T == NULL || strcmp(T->nome_ricetta,ricetta) == 0)
 		return T;
 	if (strcmp(T->nome_ricetta, ricetta) < 0)
-		return esiste_ricetta(T->right, ricetta);
-	return esiste_ricetta(T->left, ricetta);
+		return esiste_ricetta_ret(T->right, ricetta);
+	return esiste_ricetta_ret(T->left, ricetta);
 }
 
 void non_aggiungi_ricetta(char comando[MAX+1]) {
@@ -148,11 +151,11 @@ void aggiungi_ricetta(char ricetta[MAX+1], char ingrediente[MAX+1]) {
 	scanf("%d", &quantita);
 
 	strcpy(x->nome_ricetta, ricetta);
-	x->ingredienti = (s_ingredienti*) malloc(sizeof(s_ingredienti));
+	x->ingredienti = (s_ingrediente*) malloc(sizeof(s_ingrediente));
 	strcpy(x->ingredienti->nome_ingrediente, ingrediente);
 	x->ingredienti->quantita = quantita;
 
-	s_ingredienti *ingredienti;
+	s_ingrediente *ingredienti;
 
 	pre = NULL;
 	cur = ricettario;
@@ -176,7 +179,7 @@ void aggiungi_ricetta(char ricetta[MAX+1], char ingrediente[MAX+1]) {
 		if(stop<0)
 			return;
 		if(strcmp(ingrediente, "aggiungi_ricetta") != 0 && strcmp(ingrediente, "rimuovi_ricetta") != 0 && strcmp(ingrediente, "rifornimento") != 0 && strcmp(ingrediente, "ordine") != 0) {
-			ingredienti->next = (s_ingredienti*) malloc(sizeof(s_ingredienti));
+			ingredienti->next = (s_ingrediente*) malloc(sizeof(s_ingrediente));
 			ingredienti = ingredienti->next;
 			strcpy(ingredienti -> nome_ingrediente, ingrediente);
 			scanf("%d",&(ingredienti->quantita));
@@ -262,19 +265,26 @@ void rifornimento(char ingrediente[MAX+1]) {
 	printf("rifornito");
 }
 
-int ordina(char ricetta[MAX+1]) {
-	int numero;
-	scanf("%d",&numero);
-
-	if(get_ricetta(ricetta) == NULL) 
-		return -1;
-	
+unsigned int ordina(char ricetta[MAX+1]) {
+	return 0;
 }
 
-s_ingredienti* get_ricetta(char ricetta[MAX+1]) {
+s_magazzino * cerca_nel_magazzino(s_magazzino *magazzino, char ingrediente[MAX+1]) {
+	if (magazzino == NULL || strcmp(magazzino ->nome_ingrediente, ingrediente) == 0)
+		return magazzino;
+	else if(strcmp(magazzino -> nome_ingrediente, ingrediente) < 0) 
+		return cerca_nel_magazzino(magazzino->right, ingrediente);
+	else
+		return cerca_nel_magazzino(magazzino->left, ingrediente);
 
 }
+
 
 void corriere() {
 	printf("corriere");
+}
+
+void check_ordini(){
+	printf("check_ordini");
+	
 }
