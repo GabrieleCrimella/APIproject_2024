@@ -45,6 +45,7 @@ int esiste_ricetta(s_ricette*, char[MAX+1]);
 s_ricette* esiste_ricetta_ret(s_ricette*, char [MAX+1]);
 void non_aggiungi_ricetta(char[MAX+1]);
 void check_ordini();
+s_ingredienti* get_ricetta(char [MAX+1]);
 
 s_ordini *ordini, *coda;
 s_ricette *ricettario;
@@ -89,7 +90,11 @@ int main() {
 		}
 		else if(strcmp(comando, "ordine") == 0) {
 			stop=acquisisci_comando(comando);
-			ordina(comando);
+			if(ordina(comando) == -1) {
+				printf("rifiutato\n");
+			} else {
+				printf("accettato\n");
+			};
 			stop=acquisisci_comando(comando);
 		}
 		tempo ++;
@@ -261,7 +266,13 @@ int ordina(char ricetta[MAX+1]) {
 	int numero;
 	scanf("%d",&numero);
 
-	printf("sto ordinando <%d> volte un <%s>\n",numero, ricetta);
+	if(get_ricetta(ricetta) == NULL) 
+		return -1;
+	
+}
+
+s_ingredienti* get_ricetta(char ricetta[MAX+1]) {
+
 }
 
 void corriere() {
