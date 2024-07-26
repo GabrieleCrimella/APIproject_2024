@@ -64,11 +64,12 @@ s_ricette *ricettario;
 s_magazzino *magazzino;
 unsigned int stop;
 unsigned int tempo = 0;
+unsigned int capienza;
 
 int main() {
 	
 	char comando[MAX+1];
-	unsigned int periodo, capienza;
+	unsigned int periodo;
 	char ricetta[MAX+1];
 	
 	if(scanf("%d %d\n", &periodo, &capienza) <= 0) {
@@ -460,15 +461,37 @@ s_magazzino * cerca_nel_magazzino(s_magazzino *magazzino, char ingrediente[MAX+1
 
 }
 
-
 void corriere() {
-
-	printf("corriere\n");
+	s_ordini *testa = NULL, *x; //ora inserisco direttamente in ordine di scadenza decrescente, ordinando però in modo STABILE
+	unsigned int accumulatore = 0;
+	x = ordini_testa;
+	while(x != NULL && accumulatore + x->peso_totale <= capienza) {
+		accumulatore += x->peso_totale;
+		if(testa == NULL) {
+			testa = x;
+			x = x -> next;
+		} else {
+			s_ordini *j = testa, *prec = NULL;
+			while(j->peso_totale > x->peso_totale || (j->peso_totale == x->peso_totale && j->numero < x->tempo)) {
+				prec = j;
+				j = j->next;
+			}
+			prec -> next = x;		//prec ora la uso come var ausiliaria per permettermi di cambiare i giusti puntatori
+			prec = x -> next;
+			x -> next = j;
+			x = prec;
+		}
+	}
+	while(testa != NULL) {
+		printf("%d %s %d\n", testa->tempo, testa->nome_ricetta, testa->numero);
+		x=testa;
+		testa = testa -> next;
+		free (x);
+	}
 }
 
 void check_ordini(){
 	//printf("check_ordini\n");
-
 }
 
 void aggiungi_in_coda(s_ordini *ordine) {
