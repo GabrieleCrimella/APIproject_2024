@@ -57,7 +57,9 @@ unsigned int calcola_peso_ordine(char [MAX+1],unsigned int);
 s_ingrediente* cerca_ingredienti(s_ricette *, char [MAX+1]);
 void gestisci_ordine(s_ordini *ordine);
 
-s_ordini *ordini, *coda_della_coda = NULL, *testa_della_coda = NULL;	//gli ultimi due fanno riferimento alla coda. inserisco in coda, prelevo dalla testa
+s_ordini *ordini_testa, *ordini_coda;
+//anche questa la gestisco come coda: inserisco in coda e prelevo dalla testa, così ho accesso in O(1) e la tengo intrinsecamente in ordine cronologico
+s_ordini *coda_della_coda = NULL, *testa_della_coda = NULL;	//gli ultimi due fanno riferimento alla coda. inserisco in coda, prelevo dalla testa
 s_ricette *ricettario;
 s_magazzino *magazzino;
 unsigned int stop;
@@ -389,12 +391,14 @@ unsigned int ordina(char ricetta[MAX+1]) {
 	return 0;
 }
 
-void gestisci_ordine(s_ordini *ordine) {
-	if(ordini == NULL) {
-		ordini = ordine;
+void gestisci_ordine(s_ordini *ordine) {	//inserisco in coda, prelevo dalla testa
+	if(ordini_testa == NULL) {
+		ordini_testa = ordine;
+		ordini_coda = ordine;
 	} else {
-		ordine -> next = ordini;
-		ordini = ordine;
+		ordine -> next = NULL;
+		ordini_coda -> next = ordine;
+		ordini_coda = ordine;
 	}
 
 	s_ingrediente *ric;
@@ -458,6 +462,7 @@ s_magazzino * cerca_nel_magazzino(s_magazzino *magazzino, char ingrediente[MAX+1
 
 
 void corriere() {
+
 	printf("corriere\n");
 }
 
