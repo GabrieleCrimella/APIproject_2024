@@ -126,11 +126,12 @@ unsigned int acquisisci_comando(char stringa[MAX+1]) {
 unsigned int esiste_ricetta(s_ricette *T, char ricetta[MAX+1]) {
 	if(T == NULL)
 		return 0;
-	if (strcmp(T->nome_ricetta,ricetta) == 0) 
+	else if (strcmp(T->nome_ricetta,ricetta) == 0) 
 		return 1;
-	if (strcmp(T->nome_ricetta, ricetta) < 0)
+	else if (strcmp(T->nome_ricetta, ricetta) < 0)
 		return esiste_ricetta(T->right, ricetta);
-	return esiste_ricetta(T->left, ricetta);
+	else 
+		return esiste_ricetta(T->left, ricetta);
 }
 
 s_ricette* esiste_ricetta_ret(s_ricette *T, char ricetta[MAX+1]) {
