@@ -266,21 +266,59 @@ void rifornimento(char ingrediente[MAX+1]) {
 }
 
 unsigned int ordina(char ricetta[MAX+1]) {
-	//s_ingrediente *ricetta;
+	s_ingrediente *ric;
+	s_stoccaggio *stoc;
+	unsigned int numero, peso_tot, accumulatore;
+	s_ordini *ordine;
+	s_magazzino *ingrediente_nel_magazzino;
 
+	strcpy(ordine->nome_ricetta, ricetta);
+	ordine->numero = numero;
+	ordine -> tempo = tempo;
+	ordine -> peso_totale = calcola_peso_ordine(ricetta, numero);
+	
 	//acquisisci il numero di ricette che si vogliono ordinare
+	scanf("%d",&numero);
 
+	ric = cerca_ingredienti(ricettario, ricetta);
+	if(ricetta == NULL)
+		return -1;
 	//calcola peso della ricetta e moltiplicalo per il numero
 
-	//per ognuno degli ingredienti contenuto in 'ricetta':
-		//azzera l'accumulatore intero senza segno
-
-		//fai passare tutto lo stoccaggio presente in magazzino riguardo quell'ordine
-			//se è scaduto, escludi quello stoccaggio, anzi eliminalo
-			//se non è scaduto, aumenta l'accumulatore
-			//se OK l'accumulatore prima della fine dello stoccaggio, passa al prossimo ingrediente
-			//se non OK, cioè c'è null dopo e l'accumulatore non è sufficiente, allora AGGIUNGI L'ORDINE IN CODA
+	while(ric != NULL) {
+		accumulatore = 0;
+		ingrediente_nel_magazzino = cerca_nel_magazzino(magazzino, ric->nome_ingrediente);
+		stoc = ingrediente_nel_magazzino -> stoccaggio;
+		while(accumulatore < ric -> quantita * numero || stoc -> next != NULL) {
+			if(stoc -> scadenza < tempo) { //ingrediente scaduto: va rimosso
+				s_stoccaggio *da_eliminare = stoc;
+				stoc = stoc -> next;
+				ingrediente_nel_magazzino->stoccaggio = stoc;
+				free(da_eliminare);
+			}
+			accumulatore += stoc -> qta;
+		}
+		if (accumulatore < ric -> quantita * numero) {
+			aggiungi_in_coda(ordine);
+			break;
+		}
+		ric = ric -> next;
+	}
+	gestisci_ordine(ordine);
+	
 	return 0;
+}
+
+s_ingrediente* cerca_ingredienti(s_ricette *R, char ricetta[MAX+1]) {
+	if(ricettario == NULL){
+		return NULL;
+	}
+	else if(strcmp(R->nome_ricetta, ricetta) == 0)
+		return R->ingredienti;
+	else if (strcmp(R->nome_ricetta, ricetta)<0)
+		return cerca_ingredienti(R->left, ricetta);
+	else
+		return cerca_ingredienti(R->right, ricetta);
 }
 
 s_magazzino * cerca_nel_magazzino(s_magazzino *magazzino, char ingrediente[MAX+1]) {
