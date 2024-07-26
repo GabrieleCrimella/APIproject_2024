@@ -50,7 +50,7 @@ s_ingrediente* get_ricetta(char [MAX+1]);
 s_magazzino * cerca_nel_magazzino(s_magazzino *, char [MAX+1]);
 void aggiungi_in_coda(s_ordini*);
 
-s_ordini *ordini, *coda;
+s_ordini *ordini, *coda_della_coda = NULL, *testa_della_coda = NULL;	//gli ultimi due fanno riferimento alla coda. inserisco in coda, prelevo dalla testa
 s_ricette *ricettario;
 s_magazzino *magazzino;
 unsigned int stop;
@@ -87,7 +87,7 @@ int main() {
 		else if(strcmp(comando, "rifornimento") == 0) {
 			stop=acquisisci_comando(comando);
 			rifornimento(comando);
-			check_ordini();
+			check_ordini();			//controlla se qualche ordine dalla coda pulò essere gestito
 			if(stop<0)
 				break;
 		}
@@ -188,7 +188,11 @@ void aggiungi_ricetta(char ricetta[MAX+1], char ingrediente[MAX+1]) {
 }
 
 void rimuovi_ricetta(char ricetta[MAX+1]) {
-	printf("sto rimuovendo ricetta chiamata <%s>\n",ricetta);
+	if(cerca_ordine_in_coda(ricetta) == 1) {
+		printf("ordini in sospeso\n");
+	} else {	//cerca nel ricettario: se la trovi stampi 'rimossa', altrimenti ' non presente'
+
+	}
 }
 
 void rifornimento(char ingrediente[MAX+1]) {
@@ -269,19 +273,19 @@ unsigned int ordina(char ricetta[MAX+1]) {
 	s_ingrediente *ric;
 	s_stoccaggio *stoc;
 	unsigned int numero, peso_tot, accumulatore;
-	s_ordini *ordine;
+	s_ordini *ordine = (s_ordini*) malloc(sizeof(s_ordini));
 	s_magazzino *ingrediente_nel_magazzino;
 
+	//acquisisci il numero di ricette che si vogliono ordinare
+	scanf("%d",&numero);
+	
 	strcpy(ordine->nome_ricetta, ricetta);
 	ordine->numero = numero;
 	ordine -> tempo = tempo;
 	ordine -> peso_totale = calcola_peso_ordine(ricetta, numero);
 	
-	//acquisisci il numero di ricette che si vogliono ordinare
-	scanf("%d",&numero);
-
 	ric = cerca_ingredienti(ricettario, ricetta);
-	if(ricetta == NULL)
+	if(ric == NULL)
 		return -1;
 	//calcola peso della ricetta e moltiplicalo per il numero
 
@@ -295,18 +299,64 @@ unsigned int ordina(char ricetta[MAX+1]) {
 				stoc = stoc -> next;
 				ingrediente_nel_magazzino->stoccaggio = stoc;
 				free(da_eliminare);
+			} else {
+				accumulatore += stoc -> qta;
 			}
-			accumulatore += stoc -> qta;
 		}
 		if (accumulatore < ric -> quantita * numero) {
-			aggiungi_in_coda(ordine);
-			break;
+			aggiungi_in_coda(ordine);	//lo aggiunge semplicemente in coda
+			return 0;
 		}
 		ric = ric -> next;
 	}
-	gestisci_ordine(ordine);
+	gestisci_ordine(ordine);	//lo aggiunge agli ordini da gestire, elimina gli ingredienti usati dallo stoccaggio.
 	
 	return 0;
+}
+
+void gestisci_ordine(s_ordini *ordine) {
+	if(ordini == NULL) {
+		ordini = ordine;
+	} else {
+		ordine -> next = ordini;
+		ordini = ordine;
+	}
+
+	s_ingrediente *ric;
+	s_stoccaggio *stoc;
+	unsigned int accumulatore;
+	s_magazzino *ingrediente_nel_magazzino;
+	
+	ric = cerca_ingredienti(ricettario, ordine -> nome_ricetta);
+	if(ric == NULL)
+		return;
+
+	while(ric != NULL) {
+		accumulatore = 0;
+		ingrediente_nel_magazzino = cerca_nel_magazzino(magazzino, ric->nome_ingrediente);
+		stoc = ingrediente_nel_magazzino -> stoccaggio;
+		while(accumulatore < ric -> quantita * ordine -> numero || stoc -> next != NULL) {
+			if(stoc -> scadenza < tempo) { //ingrediente scaduto: va rimosso
+				s_stoccaggio *da_eliminare = stoc;
+				stoc = stoc -> next;
+				ingrediente_nel_magazzino->stoccaggio = stoc;
+				free(da_eliminare);
+			} else if(accumulatore + stoc -> qta <= ric -> quantita * ordine -> numero) {
+				accumulatore += stoc -> qta;
+				s_stoccaggio *da_eliminare;
+				da_eliminare = stoc;
+				stoc -> prev -> next = stoc -> next;
+				stoc -> next -> prev = stoc -> prev;
+				stoc = stoc -> next;
+				free(da_eliminare);
+			} else { //caso in cui devo solo modificare la quantità dello stoccaggio
+				stoc -> qta -= ric -> quantita * ordine -> numero - accumulatore;
+				continue;
+			}
+		}
+		ric = ric -> next;
+	}
+	return;
 }
 
 s_ingrediente* cerca_ingredienti(s_ricette *R, char ricetta[MAX+1]) {
@@ -339,4 +389,14 @@ void corriere() {
 void check_ordini(){
 	printf("check_ordini");
 
+}
+
+void aggiungi_in_coda(s_ordini *ordine) {
+	if(testa_della_coda == NULL) {
+		testa_della_coda = ordine;
+		coda_della_coda = ordine;
+	} else {
+		coda_della_coda -> next = ordine;
+		coda_della_coda = ordine;
+	}
 }
