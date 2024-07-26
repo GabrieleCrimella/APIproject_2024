@@ -49,6 +49,13 @@ void check_ordini();
 s_ingrediente* get_ricetta(char [MAX+1]);
 s_magazzino * cerca_nel_magazzino(s_magazzino *, char [MAX+1]);
 void aggiungi_in_coda(s_ordini*);
+int cerca_ordine_in_coda(char [MAX+1]);
+void rimuovi_ricetta_da_ricettario(s_ricette *, s_ricette *);
+s_ricette* successore_ricettario(s_ricette *);
+s_ricette* min_ricetta(s_ricette *);
+unsigned int calcola_peso_ordine(char [MAX+1],unsigned int);
+s_ingrediente* cerca_ingredienti(s_ricette *, char [MAX+1]);
+void gestisci_ordine(s_ordini *ordine);
 
 s_ordini *ordini, *coda_della_coda = NULL, *testa_della_coda = NULL;	//gli ultimi due fanno riferimento alla coda. inserisco in coda, prelevo dalla testa
 s_ricette *ricettario;
@@ -191,8 +198,67 @@ void rimuovi_ricetta(char ricetta[MAX+1]) {
 	if(cerca_ordine_in_coda(ricetta) == 1) {
 		printf("ordini in sospeso\n");
 	} else {	//cerca nel ricettario: se la trovi stampi 'rimossa', altrimenti ' non presente'
-
+		s_ricette *x = esiste_ricetta_ret(ricettario, ricetta);
+		if(x == NULL) {
+			printf("non presente\n");
+		} else {
+			rimuovi_ricetta_da_ricettario(ricettario, x);
+			printf("rimossa\n");
+		}
 	}
+}
+
+int cerca_ordine_in_coda(char ricetta[MAX+1]) {
+	s_ordini *x;
+	x = testa_della_coda;
+	while(x != NULL) {
+		if(strcmp(x->nome_ricetta, ricetta) == 0) {
+			return 1;
+		}
+		x = x ->next;
+	}
+	return 0;
+}
+
+void rimuovi_ricetta_da_ricettario(s_ricette *T, s_ricette *x) {
+	s_ricette *da_canc, *sottoa;
+	if(x->left == NULL || x->right == NULL) 
+		da_canc = x;
+	else
+		da_canc = successore_ricettario(x);
+	if (da_canc->left != NULL)
+		sottoa = da_canc->left;
+	else
+		sottoa = da_canc->right;
+	if (sottoa != NULL)
+		sottoa->p = da_canc->p;
+	if(da_canc->p == NULL)
+		ricettario = sottoa;
+	else if(da_canc == da_canc->p->left)
+		da_canc->p->left = sottoa;
+	else da_canc->p->right = sottoa;
+	if(da_canc != x)
+		strcpy(x->nome_ricetta, da_canc->nome_ricetta);
+	free(da_canc);
+}
+
+s_ricette* successore_ricettario(s_ricette *x) {
+	s_ricette *y;
+	if(x->right == NULL)
+		return min_ricetta(x->right);
+	y = x->p;
+	while (y != NULL && y->right == x) {
+		x = y;
+		y = y->p;
+	}
+	return y;
+}
+
+s_ricette* min_ricetta(s_ricette *x) {
+	s_ricette *cur = x;
+	while(ricettario->left != NULL)
+		cur = cur -> left;
+	return cur;
 }
 
 void rifornimento(char ingrediente[MAX+1]) {
@@ -262,17 +328,26 @@ void rifornimento(char ingrediente[MAX+1]) {
 		}
 		stop = acquisisci_comando(ingrediente);
 		if (stop < 0) {
-			printf("rifornito");
+			printf("rifornito\n");
 			return;
 		}
 	} while(strcmp(ingrediente, "aggiungi_ricetta") != 0 && strcmp(ingrediente, "rimuovi_ricetta") != 0 && strcmp(ingrediente, "rifornimento") != 0 && strcmp(ingrediente, "ordine") != 0);
-	printf("rifornito");
+	printf("rifornito\n");
+}
+
+unsigned int calcola_peso_ordine(char ricetta[MAX+1],unsigned int numero) {
+	unsigned int accumulatore = 0;
+	s_ingrediente *comanda = cerca_ingredienti(ricettario, ricetta);
+	while(comanda != NULL) {
+		accumulatore += comanda -> quantita;
+	}
+	return accumulatore * numero;
 }
 
 unsigned int ordina(char ricetta[MAX+1]) {
 	s_ingrediente *ric;
 	s_stoccaggio *stoc;
-	unsigned int numero, peso_tot, accumulatore;
+	unsigned int numero, accumulatore;
 	s_ordini *ordine = (s_ordini*) malloc(sizeof(s_ordini));
 	s_magazzino *ingrediente_nel_magazzino;
 
@@ -383,11 +458,11 @@ s_magazzino * cerca_nel_magazzino(s_magazzino *magazzino, char ingrediente[MAX+1
 
 
 void corriere() {
-	printf("corriere");
+	printf("corriere\n");
 }
 
 void check_ordini(){
-	printf("check_ordini");
+	//printf("check_ordini\n");
 
 }
 
