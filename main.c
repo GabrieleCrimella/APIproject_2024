@@ -5,7 +5,7 @@
 #define MAX 255
 
 typedef struct _ingrediente {
-	char nome_ingrediente[MAX+1];
+	char nome_ingrediente[MAX + 1];
 	unsigned int quantita;
 	struct _ingrediente *next;
 } s_ingrediente;
@@ -17,49 +17,49 @@ typedef struct _stoc_ingredienti {
 } s_stoccaggio;
 
 typedef struct _magazzino {
-	char nome_ingrediente[MAX+1];
+	char nome_ingrediente[MAX + 1];
 	s_stoccaggio *stoccaggio;
 	struct _magazzino *left, *right, *p;
 } s_magazzino;
 
 typedef struct _ricetta {
-	char nome_ricetta[MAX+1];
+	char nome_ricetta[MAX + 1];
 	s_ingrediente *ingredienti;
 	struct _ricetta *left, *right, *p;
 } s_ricette;
 
 typedef struct _ordini {
 	unsigned int tempo;
-	char nome_ricetta[MAX+1];
+	char nome_ricetta[MAX + 1];
 	unsigned int numero;
 	unsigned int peso_totale;
 	struct _ordini *next;
 } s_ordini;
 
-unsigned int acquisisci_comando(char[MAX+1]);
-void aggiungi_ricetta(char[MAX+1], char[MAX+1]);
-void rimuovi_ricetta(char[MAX+1]);
-void rifornimento(char[MAX+1]);
-unsigned int ordina(char[MAX+1]);
+unsigned int acquisisci_comando(char[MAX + 1]);
+void aggiungi_ricetta(char[MAX + 1], char[MAX + 1]);
+void rimuovi_ricetta(char[MAX + 1]);
+void rifornimento(char[MAX + 1]);
+unsigned int ordina(char[MAX + 1]);
 void corriere();
-unsigned int esiste_ricetta(s_ricette*, char[MAX+1]);
-s_ricette* esiste_ricetta_ret(s_ricette*, char [MAX+1]);
-void non_aggiungi_ricetta(char[MAX+1]);
+unsigned int esiste_ricetta(s_ricette *, char[MAX + 1]);
+s_ricette *esiste_ricetta_ret(s_ricette *, char[MAX + 1]);
+void non_aggiungi_ricetta(char[MAX + 1]);
 void check_ordini();
-s_ingrediente* get_ricetta(char [MAX+1]);
-s_magazzino * cerca_nel_magazzino(s_magazzino *, char [MAX+1]);
-void aggiungi_in_coda(s_ordini*);
-int cerca_ordine_in_coda(char [MAX+1]);
+s_ingrediente *get_ricetta(char[MAX + 1]);
+s_magazzino *cerca_nel_magazzino(s_magazzino *, char[MAX + 1]);
+void aggiungi_in_coda(s_ordini *);
+int cerca_ordine_in_coda(char[MAX + 1]);
 void rimuovi_ricetta_da_ricettario(s_ricette *, s_ricette *);
-s_ricette* successore_ricettario(s_ricette *);
-s_ricette* min_ricetta(s_ricette *);
-unsigned int calcola_peso_ordine(char [MAX+1],unsigned int);
-s_ingrediente* cerca_ingredienti(s_ricette *, char [MAX+1]);
+s_ricette *successore_ricettario(s_ricette *);
+s_ricette *min_ricetta(s_ricette *);
+unsigned int calcola_peso_ordine(char[MAX + 1], unsigned int);
+s_ingrediente *cerca_ingredienti(s_ricette *, char[MAX + 1]);
 void gestisci_ordine(s_ordini *ordine);
 
 s_ordini *ordini_testa, *ordini_coda;
-//anche questa la gestisco come coda: inserisco in coda e prelevo dalla testa, così ho accesso in O(1) e la tengo intrinsecamente in ordine cronologico
-s_ordini *coda_della_coda = NULL, *testa_della_coda = NULL;	//gli ultimi due fanno riferimento alla coda. inserisco in coda, prelevo dalla testa
+// anche questa la gestisco come coda: inserisco in coda e prelevo dalla testa, così ho accesso in O(1) e la tengo intrinsecamente in ordine cronologico
+s_ordini *coda_della_coda = NULL, *testa_della_coda = NULL; // gli ultimi due fanno riferimento alla coda. inserisco in coda, prelevo dalla testa
 s_ricette *ricettario;
 s_magazzino *magazzino;
 unsigned int stop;
@@ -67,111 +67,107 @@ unsigned int tempo = 0;
 unsigned int capienza;
 
 int main() {
-	
-	char comando[MAX+1];
+
+	char comando[MAX + 1];
 	unsigned int periodo;
-	char ricetta[MAX+1];
-	
-	if(scanf("%d %d\n", &periodo, &capienza) <= 0) {
-		return 1;
+	char ricetta[MAX + 1];
+
+	if (scanf("%d %d\n", &periodo, &capienza) <= 0) {
+		return -1;
 	}
 
-	stop=acquisisci_comando(comando);
-	while(stop>0) {
-		if(strcmp(comando, "aggiungi_ricetta") == 0) {
-			stop=acquisisci_comando(ricetta);
-			stop=acquisisci_comando(comando);
-			if(stop>0){
-				if(esiste_ricetta(ricettario, ricetta)) {
+	stop = acquisisci_comando(comando);
+	while (stop > 0) {
+		if (strcmp(comando, "aggiungi_ricetta") == 0) {
+			stop = acquisisci_comando(ricetta);
+			stop = acquisisci_comando(comando);
+			if (stop > 0) {
+				if (esiste_ricetta(ricettario, ricetta)) {
 					printf("ignorato\n");
 					non_aggiungi_ricetta(comando);
 				} else {
 					aggiungi_ricetta(ricetta, comando);
-					printf("aggiunto\n");
+					printf("aggiunta\n");
 				}
 			}
-			
-		}
-		else if(strcmp(comando, "rimuovi_ricetta") == 0) {
-			stop=acquisisci_comando(comando);
+		} else if (strcmp(comando, "rimuovi_ricetta") == 0) {
+			stop = acquisisci_comando(comando);
 			rimuovi_ricetta(comando);
-			stop=acquisisci_comando(comando);
-		}
-		else if(strcmp(comando, "rifornimento") == 0) {
-			stop=acquisisci_comando(comando);
+			stop = acquisisci_comando(comando);
+		} else if (strcmp(comando, "rifornimento") == 0) {
+			stop = acquisisci_comando(comando);
 			rifornimento(comando);
-			check_ordini();			//controlla se qualche ordine dalla coda pulò essere gestito
-			if(stop<0)
+			check_ordini(); // controlla se qualche ordine dalla coda pulò essere gestito
+			if (stop < 0)
 				break;
-		}
-		else if(strcmp(comando, "ordine") == 0) {
-			stop=acquisisci_comando(comando);
-			if(ordina(comando) == -1) {
+		} else if (strcmp(comando, "ordine") == 0) {
+			stop = acquisisci_comando(comando);
+			if (ordina(comando) == -1) {
 				printf("rifiutato\n");
 			} else {
 				printf("accettato\n");
-			};
-			stop=acquisisci_comando(comando);
+			}
+			stop = acquisisci_comando(comando);
 		}
-		tempo ++;
-		if(tempo%periodo == 0) {
+		tempo++;
+		if (tempo % periodo == 0) {
 			corriere();
 		}
 	}
-	//printf("bye\n");
+	// printf("bye\n");
 	return 0;
 }
 
-unsigned int acquisisci_comando(char stringa[MAX+1]) {
-	return scanf("%s",stringa);
+unsigned int acquisisci_comando(char stringa[MAX + 1]) {
+	return scanf("%s", stringa);
 }
 
-unsigned int esiste_ricetta(s_ricette *T, char ricetta[MAX+1]) {
-	//printf("<%s, %s>\n",T->nome_ricetta, ricetta);
-	if(T == NULL)
+unsigned int esiste_ricetta(s_ricette *T, char ricetta[MAX + 1]) {
+	// printf("<%s, %s>\n",T->nome_ricetta, ricetta);
+	if (T == NULL)
 		return 0;
-	else if (strcmp(T->nome_ricetta,ricetta) == 0) 
+	else if (strcmp(T->nome_ricetta, ricetta) == 0)
 		return 1;
 	else if (strcmp(T->nome_ricetta, ricetta) < 0)
 		return esiste_ricetta(T->right, ricetta);
-	else 
+	else
 		return esiste_ricetta(T->left, ricetta);
 }
 
-s_ricette* esiste_ricetta_ret(s_ricette *T, char ricetta[MAX+1]) {
-	if(T == NULL || strcmp(T->nome_ricetta,ricetta) == 0)
+s_ricette *esiste_ricetta_ret(s_ricette *T, char ricetta[MAX + 1]) {
+	if (T == NULL || strcmp(T->nome_ricetta, ricetta) == 0)
 		return T;
 	if (strcmp(T->nome_ricetta, ricetta) < 0)
 		return esiste_ricetta_ret(T->right, ricetta);
 	return esiste_ricetta_ret(T->left, ricetta);
 }
 
-void non_aggiungi_ricetta(char comando[MAX+1]) {
+void non_aggiungi_ricetta(char comando[MAX + 1]) {
 	int quantita;
-	if(scanf("%d",&quantita)<=0)
+	if (scanf("%d", &quantita) <= 0)
 		return;
-	do{
-		stop=acquisisci_comando(comando);
-		if(stop<0)
+	do {
+		stop = acquisisci_comando(comando);
+		if (stop < 0)
 			return;
-		if(strcmp(comando, "aggiungi_ricetta") != 0 && strcmp(comando, "rimuovi_ricetta") != 0 && strcmp(comando, "rifornimento") != 0 && strcmp(comando, "ordine") != 0){
-			if(scanf("%d", &quantita)<=0)
+		if (strcmp(comando, "aggiungi_ricetta") != 0 && strcmp(comando, "rimuovi_ricetta") != 0 && strcmp(comando, "rifornimento") != 0 && strcmp(comando, "ordine") != 0) {
+			if (scanf("%d", &quantita) <= 0)
 				return;
 		}
-	}while(strcmp(comando, "aggiungi_ricetta") != 0 && strcmp(comando, "rimuovi_ricetta") != 0 && strcmp(comando, "rifornimento") != 0 && strcmp(comando, "ordine") != 0);
+	} while (strcmp(comando, "aggiungi_ricetta") != 0 && strcmp(comando, "rimuovi_ricetta") != 0 && strcmp(comando, "rifornimento") != 0 && strcmp(comando, "ordine") != 0);
 }
 
-void aggiungi_ricetta(char ricetta[MAX+1], char ingrediente[MAX+1]) {
+void aggiungi_ricetta(char ricetta[MAX + 1], char ingrediente[MAX + 1]) {
 	int quantita;
-	s_ricette *pre,*cur,*x;
-	x = (s_ricette*) malloc(sizeof(s_ricette));
-	if(scanf("%d", &quantita)<=0)
+	s_ricette *pre, *cur, *x;
+	x = (s_ricette *)malloc(sizeof(s_ricette));
+	if (scanf("%d", &quantita) <= 0)
 		return;
 
 	strcpy(x->nome_ricetta, ricetta);
-	x->ingredienti = (s_ingrediente*) malloc(sizeof(s_ingrediente));
-	x->left=x->p=x->right=NULL;
-	x->ingredienti->next=NULL;
+	x->ingredienti = (s_ingrediente *)malloc(sizeof(s_ingrediente));
+	x->left = x->p = x->right = NULL;
+	x->ingredienti->next = NULL;
 	strcpy(x->ingredienti->nome_ingrediente, ingrediente);
 	x->ingredienti->quantita = quantita;
 
@@ -179,7 +175,7 @@ void aggiungi_ricetta(char ricetta[MAX+1], char ingrediente[MAX+1]) {
 
 	pre = NULL;
 	cur = ricettario;
-	while(cur != NULL) {
+	while (cur != NULL) {		//cerca il posto nel ricettario (BST) ove insrire x
 		pre = cur;
 		if (strcmp(x->nome_ricetta, cur->nome_ricetta) < 0)
 			cur = cur->left;
@@ -189,77 +185,81 @@ void aggiungi_ricetta(char ricetta[MAX+1], char ingrediente[MAX+1]) {
 	x->p = pre;
 	if (pre == NULL)
 		ricettario = x;
-	else if (strcmp(x->nome_ricetta, pre->nome_ricetta)<0)
+	else if (strcmp(x->nome_ricetta, pre->nome_ricetta) < 0)
 		pre->left = x;
 	else
 		pre->right = x;
 	ingredienti = x->ingredienti;
 	do {
-		stop=acquisisci_comando(ingrediente);
-		if(stop<0)
+		stop = acquisisci_comando(ingrediente);
+		if (stop < 0)
 			return;
-		if(strcmp(ingrediente, "aggiungi_ricetta") != 0 && strcmp(ingrediente, "rimuovi_ricetta") != 0 && strcmp(ingrediente, "rifornimento") != 0 && strcmp(ingrediente, "ordine") != 0) {
-			ingredienti->next = (s_ingrediente*) malloc(sizeof(s_ingrediente));
+		if (strcmp(ingrediente, "aggiungi_ricetta") != 0 && strcmp(ingrediente, "rimuovi_ricetta") != 0 && strcmp(ingrediente, "rifornimento") != 0 && strcmp(ingrediente, "ordine") != 0) {
+			ingredienti->next = (s_ingrediente *)malloc(sizeof(s_ingrediente));
 			ingredienti = ingredienti->next;
-			ingredienti->next=NULL;
-			strcpy(ingredienti -> nome_ingrediente, ingrediente);
-			if(scanf("%d",&(ingredienti->quantita))<=0)
+			ingredienti->next = NULL;
+			strcpy(ingredienti->nome_ingrediente, ingrediente);
+			if (scanf("%d", &(ingredienti->quantita)) <= 0)
 				return;
 		}
-	} while(strcmp(ingrediente, "aggiungi_ricetta") != 0 && strcmp(ingrediente, "rimuovi_ricetta") != 0 && strcmp(ingrediente, "rifornimento") != 0 && strcmp(ingrediente, "ordine") != 0);
+	} while (strcmp(ingrediente, "aggiungi_ricetta") != 0 && strcmp(ingrediente, "rimuovi_ricetta") != 0 && strcmp(ingrediente, "rifornimento") != 0 && strcmp(ingrediente, "ordine") != 0);
 }
 
-void rimuovi_ricetta(char ricetta[MAX+1]) {
-	if(cerca_ordine_in_coda(ricetta) == 1) {
+void rimuovi_ricetta(char ricetta[MAX + 1]) {
+	if (cerca_ordine_in_coda(ricetta) == 1) {
 		printf("ordini in sospeso\n");
-	} else {	//cerca nel ricettario: se la trovi stampi 'rimossa', altrimenti ' non presente'
+	}
+	else { // cerca nel ricettario: se la trovi stampi 'rimossa', altrimenti ' non presente'
 		s_ricette *x = esiste_ricetta_ret(ricettario, ricetta);
-		if(x == NULL) {
+		if (x == NULL) {
 			printf("non presente\n");
-		} else {
+		}
+		else {
 			rimuovi_ricetta_da_ricettario(ricettario, x);
 			printf("rimossa\n");
 		}
 	}
 }
 
-int cerca_ordine_in_coda(char ricetta[MAX+1]) {
+int cerca_ordine_in_coda(char ricetta[MAX + 1]) {
 	s_ordini *x;
 	x = testa_della_coda;
-	while(x != NULL) {
-		if(strcmp(x->nome_ricetta, ricetta) == 0) {
+	while (x != NULL) {
+		if (strcmp(x->nome_ricetta, ricetta) == 0) {
 			return 1;
 		}
-		x = x ->next;
+		x = x->next;
 	}
 	return 0;
 }
 
 void rimuovi_ricetta_da_ricettario(s_ricette *T, s_ricette *x) {
 	s_ricette *da_canc, *sottoa;
-	if(x->left == NULL || x->right == NULL) 
+	if (x->left == NULL || x->right == NULL) {
 		da_canc = x;
-	else
+	} else {
 		da_canc = successore_ricettario(x);
+	}
 	if (da_canc->left != NULL)
 		sottoa = da_canc->left;
 	else
 		sottoa = da_canc->right;
 	if (sottoa != NULL)
 		sottoa->p = da_canc->p;
-	if(da_canc->p == NULL)
+	if (da_canc->p == NULL)
 		ricettario = sottoa;
-	else if(da_canc == da_canc->p->left)
+	else if (da_canc == da_canc->p->left)
 		da_canc->p->left = sottoa;
-	else da_canc->p->right = sottoa;
-	if(da_canc != x)
+	else
+		da_canc->p->right = sottoa;
+	if (da_canc != x)
 		strcpy(x->nome_ricetta, da_canc->nome_ricetta);
 	free(da_canc);
 }
 
-s_ricette* successore_ricettario(s_ricette *x) {
+s_ricette *successore_ricettario(s_ricette *x) {
 	s_ricette *y;
-	if(x->right == NULL)
+	if (x->right == NULL)
 		return min_ricetta(x->right);
 	y = x->p;
 	while (y != NULL && y->right == x) {
@@ -269,75 +269,74 @@ s_ricette* successore_ricettario(s_ricette *x) {
 	return y;
 }
 
-s_ricette* min_ricetta(s_ricette *x) {
+s_ricette *min_ricetta(s_ricette *x) {
 	s_ricette *cur = x;
-	while(ricettario->left != NULL)
-		cur = cur -> left;
+	while (ricettario->left != NULL)
+		cur = cur->left;
 	return cur;
 }
 
-void rifornimento(char ingrediente[MAX+1]) {
+void rifornimento(char ingrediente[MAX + 1]) {
 	int quantita, scadenza;
-	do{
-		if(scanf("%d", &quantita) <= 0 || scanf("%d", &scadenza) <= 0)
+	do {
+		if (scanf("%d", &quantita) <= 0 || scanf("%d", &scadenza) <= 0)
 			return;
 
 		s_magazzino *pre = NULL, *cur = magazzino;
 		s_stoccaggio *precedente, *attuale, *da_inserire;
 
-		while (cur != NULL && strcmp(cur -> nome_ingrediente, ingrediente) != 0) {
+		while (cur != NULL && strcmp(cur->nome_ingrediente, ingrediente) != 0) {
 			pre = cur;
-			if (strcmp(cur -> nome_ingrediente, ingrediente) < 0) 
+			if (strcmp(cur->nome_ingrediente, ingrediente) < 0)
 				cur = cur->right;
 			else
 				cur = cur->left;
 		}
-		if(cur == NULL) {		//se l'ingrediente è nuovo, lo creo nell'albero
-			cur = (s_magazzino*) malloc(sizeof(s_magazzino));
-			strcpy(cur -> nome_ingrediente, ingrediente);
-			cur -> left = cur -> right = NULL;
-			cur -> stoccaggio = NULL;
-			cur -> p = pre;
-			if (pre == NULL)	//se l'albero è vuoto, il nouvo nodo è la radice
+		if (cur == NULL) { // se l'ingrediente è nuovo, lo creo nell'albero
+			cur = (s_magazzino *)malloc(sizeof(s_magazzino));
+			strcpy(cur->nome_ingrediente, ingrediente);
+			cur->left = cur->right = NULL;
+			cur->stoccaggio = NULL;
+			cur->p = pre;
+			if (pre == NULL) // se l'albero è vuoto, il nouvo nodo è la radice
 				magazzino = cur;
-			else if (strcmp(pre->nome_ingrediente, cur->nome_ingrediente) < 0)	//lo aggancio a sinistra/destra del predecessore
-				pre -> right = cur;
+			else if (strcmp(pre->nome_ingrediente, cur->nome_ingrediente) < 0) // lo aggancio a sinistra/destra del predecessore
+				pre->right = cur;
 			else
-				pre -> left = cur;
+				pre->left = cur;
 		}
 
+		// gestisco le qta degli ingredienti
 
-		//gestisco le qta degli ingredienti
+		da_inserire = (s_stoccaggio *)malloc(sizeof(s_stoccaggio));
+		da_inserire->qta = quantita;
+		da_inserire->scadenza = scadenza;
+		da_inserire->next = da_inserire->prev = NULL;
 
-		da_inserire = (s_stoccaggio*) malloc(sizeof(s_stoccaggio));
-		da_inserire -> qta = quantita;
-		da_inserire -> scadenza = scadenza;
-		da_inserire -> next = da_inserire -> prev = NULL;
-
-		if(cur -> stoccaggio == NULL) {		//lista vuota
-			cur -> stoccaggio = da_inserire;
-		} else {		
-			attuale = cur -> stoccaggio;
+		if (cur->stoccaggio == NULL) { // lista vuota
+			cur->stoccaggio = da_inserire;
+		} else {
+			attuale = cur->stoccaggio;
 			precedente = NULL;
 
-			while (attuale != NULL && attuale -> scadenza < scadenza) {		//cerco dove inserire
+			while (attuale != NULL && attuale->scadenza < scadenza) { // cerco dove inserire
 				precedente = attuale;
-				attuale = attuale -> next;
+				attuale = attuale->next;
 			}
 
-			if(attuale != NULL && attuale -> scadenza == scadenza) {
-				attuale -> qta += quantita;
-				free (da_inserire);
-			} else if (precedente == NULL) {	//inserisco in testa
-				da_inserire -> next = cur -> stoccaggio;
-				cur -> stoccaggio -> prev = da_inserire;
-				cur -> stoccaggio = da_inserire;
+			if (attuale != NULL && attuale->scadenza == scadenza) {
+				attuale->qta += quantita;
+				free(da_inserire);
+			} else if (precedente == NULL) { // inserisco in testa
+				da_inserire->next = cur->stoccaggio;
+				cur->stoccaggio->prev = da_inserire;
+				cur->stoccaggio = da_inserire;
 			} else {
-				da_inserire -> next = attuale;
-				da_inserire -> prev = precedente;
-				precedente -> next = da_inserire;
+				da_inserire->next = attuale;
+				da_inserire->prev = precedente;
+				precedente->next = da_inserire;
 
-				if (attuale != NULL) {		//se non sto inserendo in coda
+				if (attuale != NULL) { // se non sto inserendo in coda
 					attuale->prev = da_inserire;
 				}
 			}
@@ -347,74 +346,75 @@ void rifornimento(char ingrediente[MAX+1]) {
 			printf("rifornito\n");
 			return;
 		}
-	} while(strcmp(ingrediente, "aggiungi_ricetta") != 0 && strcmp(ingrediente, "rimuovi_ricetta") != 0 && strcmp(ingrediente, "rifornimento") != 0 && strcmp(ingrediente, "ordine") != 0);
+	} while (strcmp(ingrediente, "aggiungi_ricetta") != 0 && strcmp(ingrediente, "rimuovi_ricetta") != 0 && strcmp(ingrediente, "rifornimento") != 0 && strcmp(ingrediente, "ordine") != 0);
 	printf("rifornito\n");
 }
 
-unsigned int calcola_peso_ordine(char ricetta[MAX+1],unsigned int numero) {
+unsigned int calcola_peso_ordine(char ricetta[MAX + 1], unsigned int numero) {
 	unsigned int accumulatore = 0;
 	s_ingrediente *comanda = cerca_ingredienti(ricettario, ricetta);
-	while(comanda != NULL) {
-		accumulatore += comanda -> quantita;
-		comanda = comanda ->next;
+	while (comanda != NULL) {
+		accumulatore += comanda->quantita;
+		comanda = comanda->next;
 	}
 	return accumulatore * numero;
 }
 
-unsigned int ordina(char ricetta[MAX+1]) {
+unsigned int ordina(char ricetta[MAX + 1]) {
 	s_ingrediente *ric;
 	s_stoccaggio *stoc;
 	unsigned int numero, accumulatore;
-	s_ordini *ordine = (s_ordini*) malloc(sizeof(s_ordini));
-	ordine->next=NULL;
+	s_ordini *ordine = (s_ordini *)malloc(sizeof(s_ordini));
+	ordine->next = NULL;
 	s_magazzino *ingrediente_nel_magazzino;
 
-	//acquisisci il numero di ricette che si vogliono ordinare
-	if(scanf("%d",&numero)<=0)
+	// acquisisci il numero di ricette che si vogliono ordinare
+	if (scanf("%d", &numero) <= 0)
 		return -1;
-	
+
 	strcpy(ordine->nome_ricetta, ricetta);
 	ordine->numero = numero;
-	ordine -> tempo = tempo;
-	ordine -> peso_totale = calcola_peso_ordine(ricetta, numero);
-	
-	ric = cerca_ingredienti(ricettario, ricetta);
-	if(ric == NULL)
-		return -1;
-	//calcola peso della ricetta e moltiplicalo per il numero
+	ordine->tempo = tempo;
+	ordine->peso_totale = calcola_peso_ordine(ricetta, numero);
 
-	while(ric != NULL) {
+	ric = cerca_ingredienti(ricettario, ricetta);
+	if (ric == NULL)
+		return -1;
+	// calcola peso della ricetta e moltiplicalo per il numero
+
+	while (ric != NULL) {
 		accumulatore = 0;
 		ingrediente_nel_magazzino = cerca_nel_magazzino(magazzino, ric->nome_ingrediente);
-		stoc = ingrediente_nel_magazzino -> stoccaggio;
-		while(accumulatore < ric -> quantita * numero || stoc -> next != NULL) {
-			if(stoc -> scadenza < tempo) { //ingrediente scaduto: va rimosso
+		stoc = ingrediente_nel_magazzino->stoccaggio;
+		while (accumulatore < ric->quantita * numero && stoc != NULL) {
+			if (stoc->scadenza <= tempo) { // ingrediente scaduto: va rimosso
 				s_stoccaggio *da_eliminare = stoc;
-				stoc = stoc -> next;
+				stoc = stoc->next;
 				ingrediente_nel_magazzino->stoccaggio = stoc;
 				free(da_eliminare);
 			} else {
-				accumulatore += stoc -> qta;
+				accumulatore += stoc->qta;
+				stoc = stoc -> next;
 			}
 		}
-		if (accumulatore < ric -> quantita * numero) {
-			aggiungi_in_coda(ordine);	//lo aggiunge semplicemente in coda
+		if (accumulatore < ric->quantita * numero) {
+			aggiungi_in_coda(ordine); // lo aggiunge semplicemente in coda
 			return 0;
 		}
-		ric = ric -> next;
+		ric = ric->next;
 	}
-	gestisci_ordine(ordine);	//lo aggiunge agli ordini da gestire, elimina gli ingredienti usati dallo stoccaggio.
-	
+	gestisci_ordine(ordine); // lo aggiunge agli ordini da gestire, elimina gli ingredienti usati dallo stoccaggio.
 	return 0;
 }
 
-void gestisci_ordine(s_ordini *ordine) {	//inserisco in coda, prelevo dalla testa
-	if(ordini_testa == NULL) {
+void gestisci_ordine(s_ordini *ordine) { // inserisco in coda, prelevo dalla testa
+	if (ordini_testa == NULL) {
 		ordini_testa = ordine;
 		ordini_coda = ordine;
+		ordine->next = NULL;
 	} else {
-		ordine -> next = NULL;
-		ordini_coda -> next = ordine;
+		ordine->next = NULL;
+		ordini_coda->next = ordine;
 		ordini_coda = ordine;
 	}
 
@@ -422,147 +422,159 @@ void gestisci_ordine(s_ordini *ordine) {	//inserisco in coda, prelevo dalla test
 	s_stoccaggio *stoc;
 	unsigned int accumulatore;
 	s_magazzino *ingrediente_nel_magazzino;
-	
-	ric = cerca_ingredienti(ricettario, ordine -> nome_ricetta);
-	if(ric == NULL)
+
+	ric = cerca_ingredienti(ricettario, ordine->nome_ricetta);
+	if (ric == NULL)
 		return;
 
-	while(ric != NULL) {
+	while (ric != NULL) {
 		accumulatore = 0;
 		ingrediente_nel_magazzino = cerca_nel_magazzino(magazzino, ric->nome_ingrediente);
-		stoc = ingrediente_nel_magazzino -> stoccaggio;
-		while(accumulatore < ric -> quantita * ordine -> numero || stoc -> next != NULL) {
-			if(stoc -> scadenza < tempo) { //ingrediente scaduto: va rimosso
+		stoc = ingrediente_nel_magazzino->stoccaggio;
+		while (stoc != NULL && accumulatore < ric->quantita * ordine->numero) {
+			if (stoc->scadenza <= tempo) { // ingrediente scaduto: va rimosso
 				s_stoccaggio *da_eliminare = stoc;
-				stoc = stoc -> next;
+				stoc = stoc->next;
 				ingrediente_nel_magazzino->stoccaggio = stoc;
 				free(da_eliminare);
-			} else if(accumulatore + stoc -> qta <= ric -> quantita * ordine -> numero) {
-				accumulatore += stoc -> qta;
+			} else if (accumulatore + stoc->qta <= ric->quantita * ordine->numero) {
+				accumulatore += stoc->qta;
 				s_stoccaggio *da_eliminare;
 				da_eliminare = stoc;
-				if(stoc->next != NULL) {
-					stoc -> prev -> next = stoc -> next;
-					stoc -> next -> prev = stoc -> prev;
-					stoc = stoc -> next;
+				if (stoc->next != NULL) {
+					stoc->prev->next = stoc->next;
+					stoc->next->prev = stoc->prev;
 				}
+				stoc = stoc->next;
 				free(da_eliminare);
-			} else { //caso in cui devo solo modificare la quantità dello stoccaggio
-				stoc -> qta -= ric -> quantita * ordine -> numero - accumulatore;
-				continue;
+			} else { // caso in cui devo solo modificare la quantità dello stoccaggio
+				stoc->qta -= ric->quantita * ordine->numero - accumulatore;
+				break;
 			}
 		}
-		ric = ric -> next;
+		ric = ric->next;
 	}
 	return;
 }
 /*
  * ATTENZIONE NELLE RIGHE QUI SOPRA!!!!!!!!
  * ATTENZIONE!!!!!
-*/
+ */
 
-s_ingrediente* cerca_ingredienti(s_ricette *R, char ricetta[MAX+1]) {
-	if(ricettario == NULL){
+s_ingrediente *cerca_ingredienti(s_ricette *R, char ricetta[MAX + 1]) {
+	if (ricettario == NULL)
 		return NULL;
-	}
-	else if(strcmp(R->nome_ricetta, ricetta) == 0)
+	else if (strcmp(R->nome_ricetta, ricetta) == 0)
 		return R->ingredienti;
-	else if (strcmp(R->nome_ricetta, ricetta)>0)
+	else if (strcmp(R->nome_ricetta, ricetta) > 0)
 		return cerca_ingredienti(R->left, ricetta);
 	else
 		return cerca_ingredienti(R->right, ricetta);
 }
 
-s_magazzino * cerca_nel_magazzino(s_magazzino *magazzino, char ingrediente[MAX+1]) {
-	if (magazzino == NULL || strcmp(magazzino ->nome_ingrediente, ingrediente) == 0)
+s_magazzino *cerca_nel_magazzino(s_magazzino *magazzino, char ingrediente[MAX + 1]) {
+	if (magazzino == NULL || strcmp(magazzino->nome_ingrediente, ingrediente) == 0)
 		return magazzino;
-	else if(strcmp(magazzino -> nome_ingrediente, ingrediente) < 0) 
+	else if (strcmp(magazzino->nome_ingrediente, ingrediente) < 0)
 		return cerca_nel_magazzino(magazzino->right, ingrediente);
 	else
 		return cerca_nel_magazzino(magazzino->left, ingrediente);
-
 }
 
 void corriere() {
-	s_ordini *testa = NULL, *x; //ora inserisco direttamente in ordine di scadenza decrescente, ordinando però in modo STABILE
+	s_ordini *testa = NULL; // ora inserisco direttamente in ordine di scadenza decrescente, ordinando però in modo STABILE
 	unsigned int accumulatore = 0;
-	x = ordini_testa;
-	while(x != NULL && accumulatore + x->peso_totale <= capienza) {
-		accumulatore += x->peso_totale;
-		if(testa == NULL) {
-			testa = x;
-			x = x -> next;
+	while (ordini_testa != NULL && accumulatore + ordini_testa->peso_totale <= capienza) {
+		accumulatore += ordini_testa->peso_totale;
+		if (testa == NULL) {
+			testa = ordini_testa;
+			ordini_testa = ordini_testa->next;
+			testa->next = NULL;
 		} else {
 			s_ordini *j = testa, *prec = NULL;
-			while(j->peso_totale > x->peso_totale || (j->peso_totale == x->peso_totale && j->numero < x->tempo)) {
+			while (j != NULL && (j->peso_totale > ordini_testa->peso_totale || (j->peso_totale == ordini_testa->peso_totale && j->numero < ordini_testa->tempo))) {
 				prec = j;
 				j = j->next;
 			}
-			prec -> next = x;		//prec ora la uso come var ausiliaria per permettermi di cambiare i giusti puntatori
-			prec = x -> next;
-			x -> next = j;
-			x = prec;
+			if(prec != NULL) {
+				prec->next = ordini_testa;
+				s_ordini *temp = ordini_testa->next;
+				ordini_testa->next = j;
+				ordini_testa = temp;
+			} else {
+				ordini_testa->next = testa;
+				testa = ordini_testa;
+				ordini_testa = ordini_testa->next;
+			}
 		}
 	}
-	while(testa != NULL) {
+	if(ordini_testa == NULL)
+		ordini_coda = NULL;
+	else if(ordini_testa->next == NULL)
+		ordini_coda = ordini_testa;
+	if(testa == NULL) {
+		printf("camioncino vuoto\n");
+		return;
+	}
+	s_ordini *x;
+	while (testa != NULL) {
 		printf("%d %s %d\n", testa->tempo, testa->nome_ricetta, testa->numero);
-		x=testa;
-		testa = testa -> next;
-		free (x);
+		x = testa;
+		testa = testa->next;
+		free(x);
 	}
 }
 
-void check_ordini(){
+void check_ordini() {
 	s_ingrediente *ric;
 	s_stoccaggio *stoc;
 	unsigned int accumulatore;
-	s_ordini *ordine = (s_ordini*) malloc(sizeof(s_ordini)), *da_eliminare;
-	ordine->next=NULL;
+	s_ordini *ordine = (s_ordini *)malloc(sizeof(s_ordini)), *da_eliminare;
+	ordine->next = NULL;
 	s_magazzino *ingrediente_nel_magazzino;
 
-	while(testa_della_coda != NULL) {
-		
+	while (testa_della_coda != NULL) {
 		ric = cerca_ingredienti(ricettario, testa_della_coda->nome_ricetta);
-		if(ric == NULL)
+		if (ric == NULL)
 			return;
-		//calcola peso della ricetta e moltiplicalo per il numero
+		// calcola peso della ricetta e moltiplicalo per il numero
 
-		while(ric != NULL) {
+		while (ric != NULL) {
 			accumulatore = 0;
 			ingrediente_nel_magazzino = cerca_nel_magazzino(magazzino, ric->nome_ingrediente);
-			stoc = ingrediente_nel_magazzino -> stoccaggio;
-			while(accumulatore < ric -> quantita * testa_della_coda->numero || stoc -> next != NULL) {
-				if(stoc -> scadenza < tempo) { //ingrediente scaduto: va rimosso
+			stoc = ingrediente_nel_magazzino->stoccaggio;
+			while (accumulatore < ric->quantita * testa_della_coda->numero && stoc->next != NULL) {
+				if (stoc->scadenza <= tempo) { // ingrediente scaduto: va rimosso
 					s_stoccaggio *da_eliminare = stoc;
-					stoc = stoc -> next;
+					stoc = stoc->next;
 					ingrediente_nel_magazzino->stoccaggio = stoc;
 					free(da_eliminare);
 				} else {
-					accumulatore += stoc -> qta;
+					accumulatore += stoc->qta;
+					stoc = stoc->next;
 				}
 			}
-			if (accumulatore < ric -> quantita * testa_della_coda->numero) {	//non posso ancora gestire l'ordine
+			if (accumulatore < ric->quantita * testa_della_coda->numero) { // non posso ancora gestire l'ordine
 				return;
 			}
-			ric = ric -> next;
+			ric = ric->next;
 		}
-		gestisci_ordine(ordine);	//lo aggiunge agli ordini da gestire, elimina gli ingredienti usati dallo stoccaggio.
+		gestisci_ordine(ordine); // lo aggiunge agli ordini da gestire, elimina gli ingredienti usati dallo stoccaggio.
 		da_eliminare = testa_della_coda;
-		if(coda_della_coda == testa_della_coda)
+		if (coda_della_coda == testa_della_coda)
 			testa_della_coda = coda_della_coda = NULL;
-		else 
-			testa_della_coda = testa_della_coda -> next;
+		else
+			testa_della_coda = testa_della_coda->next;
 		free(da_eliminare);
-		
 	}
 }
 
 void aggiungi_in_coda(s_ordini *ordine) {
-	if(testa_della_coda == NULL) {
+	if (testa_della_coda == NULL) {
 		testa_della_coda = ordine;
 		coda_della_coda = ordine;
 	} else {
-		coda_della_coda -> next = ordine;
+		coda_della_coda->next = ordine;
 		coda_della_coda = ordine;
 	}
 }
