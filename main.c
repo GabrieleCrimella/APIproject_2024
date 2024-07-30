@@ -275,7 +275,7 @@ void rimuovi_ricetta_da_ricettario(s_ricette *T, s_ricette *x) {
 
 s_ricette *successore_ricettario(s_ricette *x) {
 	s_ricette *y;
-	if (x->right == NULL)
+	if (x->right != NULL)
 		return min_ricetta(x->right);
 	y = x->p;
 	while (y != NULL && y->right == x) {
@@ -287,7 +287,7 @@ s_ricette *successore_ricettario(s_ricette *x) {
 
 s_ricette *min_ricetta(s_ricette *x) {
 	s_ricette *cur = x;
-	while (ricettario->left != NULL)
+	while (cur->left != NULL)
 		cur = cur->left;
 	return cur;
 }
@@ -445,6 +445,8 @@ void gestisci_ordine(s_ordini *ordine) { // inserisco in coda, prelevo dalla tes
 	while (ric != NULL) {
 		accumulatore = 0;
 		ingrediente_nel_magazzino = cerca_nel_magazzino(magazzino, ric->nome_ingrediente);
+		if(ingrediente_nel_magazzino==NULL)
+			return;
 		stoc = ingrediente_nel_magazzino->stoccaggio;
 		while (stoc != NULL && accumulatore < ric->quantita * ordine->numero) {
 			if (stoc->scadenza <= tempo) { // ingrediente scaduto: va rimosso
@@ -558,64 +560,71 @@ void check_ordini() {
 	s_ingrediente *ric;
 	s_stoccaggio *stoc;
 	unsigned int accumulatore;
-	s_ordini *ordine;
+	s_ordini *ordine = testa_della_coda, *prec = NULL, *cur;
 	//s_ordini *da_eliminare;
 	
 	s_magazzino *ingrediente_nel_magazzino;
+	unsigned int sentinella=0;
 
-	while (testa_della_coda != NULL) {
-		ric = cerca_ingredienti(ricettario, testa_della_coda->nome_ricetta);
-		if (ric == NULL)
-			return;
-		// calcola peso della ricetta e moltiplicalo per il numero
-		ordine = testa_della_coda;
-		//ordine->next = NULL;
-
+	while (ordine != NULL) {
+		ric = cerca_ingredienti(ricettario, ordine->nome_ricetta);
 		while (ric != NULL) {
 			accumulatore = 0;
 			ingrediente_nel_magazzino = cerca_nel_magazzino(magazzino, ric->nome_ingrediente);
-			if(ingrediente_nel_magazzino == NULL)
-				return;
-			stoc = ingrediente_nel_magazzino->stoccaggio;
-			while (accumulatore < ric->quantita * ordine->numero && stoc != NULL) {
-				if (stoc->scadenza <= tempo) { // ingrediente scaduto: va rimosso
-					s_stoccaggio *da_eliminare = stoc;
-					stoc = stoc->next;
-					ingrediente_nel_magazzino->stoccaggio = stoc;
-					if(stoc != NULL)
-						stoc->prev = NULL;
-					free(da_eliminare);
-				} else {
-					accumulatore += stoc->qta;
-					stoc = stoc->next;
+			if(ingrediente_nel_magazzino != NULL){
+				stoc = ingrediente_nel_magazzino->stoccaggio;
+				while (accumulatore < ric->quantita * ordine->numero && stoc != NULL) {
+					if (stoc->scadenza <= tempo) { // ingrediente scaduto: va rimosso
+						s_stoccaggio *da_eliminare = stoc;
+						stoc = stoc->next;
+						ingrediente_nel_magazzino->stoccaggio = stoc;
+						if(stoc != NULL)
+							stoc->prev = NULL;
+						free(da_eliminare);
+					} else {
+						accumulatore += stoc->qta;
+						stoc = stoc->next;
+					}
 				}
-			}
-			if (accumulatore < ric->quantita * ordine->numero) { // non posso ancora gestire l'ordine
-				return;
+				if (accumulatore < ric->quantita * ordine->numero) { // non posso ancora gestire l'ordine
+					prec = ordine;
+					ordine = ordine -> next;
+					sentinella=1;
+					break;
+				}
+			} else {
+				prec = ordine;
+				ordine = ordine -> next;
+				sentinella=1;
+				break;
 			}
 			ric = ric->next;
 		}
-
-		gestisci_ordine(ordine); // lo aggiunge agli ordini da gestire, elimina gli ingredienti usati dallo stoccaggio.
-		
-		if (testa_della_coda -> next == NULL) {
-			testa_della_coda = coda_della_coda = NULL;
+		if(sentinella==1){
+			sentinella=0;
+			continue;
+		}
+		cur = ordine;
+		ordine = ordine -> next;
+		// Caso 1: ordine è la testa della lista
+		if (prec == NULL) {
+			testa_della_coda = cur->next;
+			// Se la testa è anche la coda, sistemo la coda
+			if (coda_della_coda == cur) {
+				coda_della_coda = NULL;
+			}
 		} else {
-			testa_della_coda = testa_della_coda -> next;
+			// Caso 2: `ordine` non è la testa della lista
+			prec->next = cur->next;
+			// Caso 3: `ordine` è la coda della lista
+			if (coda_della_coda == cur) {
+				coda_della_coda = prec;
+			}
 		}
 
-		/*
-		ordine->next = NULL;
-		if (ordini_testa == NULL) {
-			ordini_testa = ordine;
-			ordini_coda = ordine;
-		} else {
-			ordini_coda->next = ordine;
-			ordini_coda = ordine;
-		}*/
-		//da_eliminare = testa_della_coda;
-		//free(da_eliminare);
-		inserisci_in_ordine_di_tempo(ordine);
+		gestisci_ordine(cur); // lo aggiunge agli ordini da gestire, elimina gli ingredienti usati dallo stoccaggio.
+		
+		inserisci_in_ordine_di_tempo(cur);
 	}
 }
 
