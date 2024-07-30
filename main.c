@@ -58,6 +58,9 @@ s_ingrediente *cerca_ingredienti(s_ricette *, char[MAX + 1]);
 void gestisci_ordine(s_ordini *ordine);
 int cerca_ordine_in_lista(char [MAX + 1]);
 void inserisci_in_ordine_di_tempo(s_ordini *ordine);
+s_magazzino *min_magazzino(s_magazzino *);
+s_magazzino *successore_magazzino(s_magazzino *);
+void rimuovi_da_magazzino(s_magazzino *, s_magazzino *);
 
 s_ordini *ordini_testa = NULL, *ordini_coda = NULL;
 // anche questa la gestisco come coda: inserisco in coda e prelevo dalla testa, così ho accesso in O(1) e la tengo intrinsecamente in ordine cronologico
@@ -485,6 +488,8 @@ void gestisci_ordine(s_ordini *ordine) { // inserisco in coda, prelevo dalla tes
 				stoc->qta -= ric->quantita * ordine->numero - accumulatore;
 				break;
 			}
+			if(ingrediente_nel_magazzino->stoccaggio == NULL)
+				rimuovi_da_magazzino(magazzino, ingrediente_nel_magazzino);
 		}
 		ric = ric->next;
 	}
@@ -494,6 +499,52 @@ void gestisci_ordine(s_ordini *ordine) { // inserisco in coda, prelevo dalla tes
  * ATTENZIONE NELLE RIGHE QUI SOPRA!!!!!!!!
  * ATTENZIONE!!!!!
  */
+
+s_magazzino *successore_magazzino(s_magazzino *elemento) {
+	s_magazzino *y;
+	if (elemento->right != NULL)
+		return min_magazzino(elemento->right);
+	y = elemento->p;
+	while (y != NULL && y->right == elemento) {
+		elemento = y;
+		y = y->p;
+	}
+	return y;
+}
+
+s_magazzino *min_magazzino(s_magazzino *x) {
+	s_magazzino *cur = x;
+	while (cur->left != NULL)
+		cur = cur->left;
+	return cur;
+}
+
+void rimuovi_da_magazzino(s_magazzino *M, s_magazzino *x) {
+	s_magazzino *da_canc, *sottoa;
+	if (x->left == NULL || x->right == NULL) {
+		da_canc = x;
+	} else {
+		da_canc = successore_magazzino(x);
+	}
+	if (da_canc->left != NULL)
+		sottoa = da_canc->left;
+	else
+		sottoa = da_canc->right;
+	if (sottoa != NULL)
+		sottoa->p = da_canc->p;
+	if (da_canc->p == NULL)
+		magazzino = sottoa;
+	else if (da_canc == da_canc->p->left)
+		da_canc->p->left = sottoa;
+	else
+		da_canc->p->right = sottoa;
+	if (da_canc != x) {
+		strcpy(x->nome_ingrediente, da_canc->nome_ingrediente);
+		x->stoccaggio = da_canc -> stoccaggio;
+	}
+	free(da_canc);
+}
+
 
 s_ingrediente *cerca_ingredienti(s_ricette *R, char ricetta[MAX + 1]) {
 	if (R == NULL)
