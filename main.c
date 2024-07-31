@@ -106,7 +106,6 @@ unsigned int tempo = 0, periodo;
 unsigned int capienza;
 
 int main() {
-
     char comando[MAX + 1];
     char ricetta[MAX + 1];
 
