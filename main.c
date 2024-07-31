@@ -5,7 +5,7 @@
 #define MAX 255
 
 typedef struct ingrediente {
-    char nome_ingrediente[MAX + 1];
+    char* nome_ingrediente;
     unsigned int quantita;
     struct ingrediente *next;
 } s_ingrediente;
@@ -23,7 +23,7 @@ typedef struct magazzino {
 } s_magazzino;
 
 typedef struct ricetta {
-    char nome_ricetta[MAX + 1];
+    char *nome_ricetta;
     s_ingrediente *ingredienti;
     struct ricetta *left, *right, *p;
 } s_ricette;
@@ -202,6 +202,7 @@ void rimuovi_ricettario(s_ricette *R) {
     rimuovi_ricettario(R->left);
     rimuovi_ricettario(R->right);
     dealloca_ingredienti(R->ingredienti);
+    free(R->nome_ricetta);
     free(R);
 }
 
@@ -210,6 +211,7 @@ void dealloca_ingredienti(s_ingrediente *ingredienti) {
     while (ingredienti != NULL) {
         temp = ingredienti;
         ingredienti = ingredienti->next;
+        free(temp->nome_ingrediente);
         free(temp);
     }
 }
@@ -262,13 +264,15 @@ void aggiungi_ricetta(char ricetta[MAX + 1], char ingrediente[MAX + 1]) {
     s_ricette *pre, *cur, *x;
     x = (s_ricette *) malloc(sizeof(s_ricette));
     if (scanf("%d", &quantita) <= 0) {
+        free(x);
         return;
     }
-
+    x->nome_ricetta=(char*)malloc(sizeof(char)*(strlen(ricetta)+1));
     strcpy(x->nome_ricetta, ricetta);
     x->ingredienti = (s_ingrediente *) malloc(sizeof(s_ingrediente));
     x->left = x->p = x->right = NULL;
     x->ingredienti->next = NULL;
+    x->ingredienti->nome_ingrediente=(char*)malloc(sizeof(char)*(strlen(ingrediente)+1));
     strcpy(x->ingredienti->nome_ingrediente, ingrediente);
     x->ingredienti->quantita = quantita;
 
@@ -298,6 +302,7 @@ void aggiungi_ricetta(char ricetta[MAX + 1], char ingrediente[MAX + 1]) {
         if (strcmp(ingrediente, "aggiungi_ricetta") != 0 && strcmp(ingrediente, "rimuovi_ricetta") != 0 &&
             strcmp(ingrediente, "rifornimento") != 0 && strcmp(ingrediente, "ordine") != 0) {
             ingredienti->next = (s_ingrediente *) malloc(sizeof(s_ingrediente));
+            ingredienti->next->nome_ingrediente=(char*)malloc(sizeof(char)*(strlen(ingrediente)+1));
             ingredienti = ingredienti->next;
             ingredienti->next = NULL;
             strcpy(ingredienti->nome_ingrediente, ingrediente);
@@ -367,11 +372,15 @@ void rimuovi_ricetta_da_ricettario(s_ricette *x) {
     else
         da_canc->p->right = sottoa;
     if (da_canc != x) {
+        char temp[MAX+1];
+        strcpy(temp, da_canc->nome_ricetta);
+        x->nome_ricetta = (char*)realloc(x->nome_ricetta, sizeof(char)*(strlen(temp)+1));
         strcpy(x->nome_ricetta, da_canc->nome_ricetta);
         s_ingrediente *cur = x->ingredienti;
         while (cur != NULL) {
             s_ingrediente *temp = cur;
             cur = cur->next;
+            free(temp->nome_ingrediente);
             free(temp);
         }
         x->ingredienti = da_canc->ingredienti;
@@ -381,9 +390,11 @@ void rimuovi_ricetta_da_ricettario(s_ricette *x) {
         while (cur != NULL) {
             s_ingrediente *temp = cur;
             cur = cur->next;
+            free(temp->nome_ingrediente);
             free(temp);
         }
     }
+    free(da_canc->nome_ricetta);
     free(da_canc);
 }
 
@@ -400,10 +411,9 @@ s_ricette *successore_ricettario(s_ricette *x) {
 }
 
 s_ricette *min_ricetta(s_ricette *x) {
-    s_ricette *cur = x;
-    while (cur->left != NULL)
-        cur = cur->left;
-    return cur;
+    while (x->left != NULL)
+        x = x->left;
+    return x;
 }
 
 void rifornimento(char ingrediente[MAX + 1]) {
