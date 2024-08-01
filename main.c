@@ -48,9 +48,9 @@ unsigned int ordina(char[MAX + 1]);
 
 void corriere();
 
-unsigned int esiste_ricetta(s_ricette *, char[MAX + 1]);
+unsigned int esiste_ricetta(char[MAX + 1]);
 
-s_ricette *esiste_ricetta_ret(s_ricette *, char[MAX + 1]);
+s_ricette *esiste_ricetta_ret(char[MAX + 1]);
 
 void non_aggiungi_ricetta(char[MAX + 1]);
 
@@ -102,6 +102,8 @@ s_magazzino *aggiungi_solo_ricetta_a_magazzino(const char *);
 
 void cambia_ref_ordini(s_ricette *r1, s_ricette *r2);
 
+s_stoccaggio *elimina_stoc_scaduto(s_stoccaggio *stoc, s_magazzino *ingrediente_nel_magazzino);
+
 s_ordini *ordini_testa = NULL, *ordini_coda = NULL;
 // anche questa la gestisco come coda: inserisco in coda e prelevo dalla testa, così ho accesso in O(1) e la tengo intrinsecamente in ordine cronologico
 s_ordini *coda_della_coda = NULL, *testa_della_coda = NULL; // gli ultimi due fanno riferimento alla coda. inserisco in coda, prelevo dalla testa
@@ -125,7 +127,7 @@ int main() {
             acquisisci_comando(ricetta);
             acquisisci_comando(comando);
             if (stop == 1) {
-                if (esiste_ricetta(ricettario, ricetta)) {
+                if (esiste_ricetta(ricetta)) {
                     printf("ignorato\n");
                     non_aggiungi_ricetta(comando);
                 } else {
@@ -228,24 +230,32 @@ void acquisisci_comando(char stringa[MAX + 1]) {
         stop = -1;
 }
 
-unsigned int esiste_ricetta(s_ricette *T, char ricetta[MAX + 1]) {
-    // printf("<%s, %s>\n",T->nome_ricetta, ricetta);
-    if (T == NULL)
-        return 0;
-    else if (strcmp(T->nome_ricetta, ricetta) == 0)
-        return 1;
-    else if (strcmp(T->nome_ricetta, ricetta) < 0)
-        return esiste_ricetta(T->right, ricetta);
-    else
-        return esiste_ricetta(T->left, ricetta);
+unsigned int esiste_ricetta(char ricetta[MAX + 1]) {
+    s_ricette *T = ricettario;
+    while (T != NULL) {
+        int cmp = strcmp(T->nome_ricetta, ricetta);
+        if (cmp == 0)
+            return 1;
+        else if (cmp < 0)
+            T = T->right;
+        else
+            T = T->left;
+    }
+    return 0;
 }
 
-s_ricette *esiste_ricetta_ret(s_ricette *T, char ricetta[MAX + 1]) {
-    if (T == NULL || strcmp(T->nome_ricetta, ricetta) == 0)
-        return T;
-    if (strcmp(T->nome_ricetta, ricetta) < 0)
-        return esiste_ricetta_ret(T->right, ricetta);
-    return esiste_ricetta_ret(T->left, ricetta);
+s_ricette *esiste_ricetta_ret(char ricetta[MAX + 1]) {
+    s_ricette *T = ricettario;
+    while (T != NULL) {
+        int cmp = strcmp(T->nome_ricetta, ricetta);
+        if (cmp == 0)
+            return T;
+        else if (cmp < 0)
+            T = T->right;
+        else
+            T = T->left;
+    }
+    return NULL;
 }
 
 void non_aggiungi_ricetta(char comando[MAX + 1]) {
@@ -326,7 +336,7 @@ void rimuovi_ricetta(char ricetta[MAX + 1]) {
     if (cerca_ordine_in_coda(ricetta) == 1 || cerca_ordine_in_lista(ricetta) == 1) {
         printf("ordini in sospeso\n");
     } else { // cerca nel ricettario: se la trovi stampi 'rimossa', altrimenti 'non presente'
-        s_ricette *x = esiste_ricetta_ret(ricettario, ricetta);
+        s_ricette *x = esiste_ricetta_ret(ricetta);
         if (x == NULL) {
             printf("non presente\n");
         } else {
@@ -392,18 +402,18 @@ void rimuovi_ricetta_da_ricettario(s_ricette *x) {
 }
 
 void cambia_ref_ordini(s_ricette *r1, s_ricette *r2) {
-    s_ordini*temp;
-    temp=ordini_testa;
-    while(temp!=NULL){
-        if(temp->ref_ricetta==r1)
-            temp->ref_ricetta=r2;
-        temp=temp->next;
+    s_ordini *temp;
+    temp = ordini_testa;
+    while (temp != NULL) {
+        if (temp->ref_ricetta == r1)
+            temp->ref_ricetta = r2;
+        temp = temp->next;
     }
-    temp=testa_della_coda;
-    while(temp!=NULL){
-        if(temp->ref_ricetta==r1)
-            temp->ref_ricetta=r2;
-        temp=temp->next;
+    temp = testa_della_coda;
+    while (temp != NULL) {
+        if (temp->ref_ricetta == r1)
+            temp->ref_ricetta = r2;
+        temp = temp->next;
     }
 }
 
@@ -533,7 +543,7 @@ unsigned int ordina(char ricetta[MAX + 1]) {
         return -1;
     }
 
-    ordine->ref_ricetta = esiste_ricetta_ret(ricettario, ricetta);
+    ordine->ref_ricetta = esiste_ricetta_ret(ricetta);
     if (ordine->ref_ricetta == NULL) {
         free(ordine);
         return -1;
@@ -795,14 +805,9 @@ void check_ordini() {
             ingrediente_nel_magazzino = ric->ref_magazzino;
             if (ingrediente_nel_magazzino != NULL) {
                 stoc = ingrediente_nel_magazzino->stoccaggio;
-                while (accumulatore < ric->quantita * ordine->numero && stoc != NULL) {
+                while (stoc != NULL && accumulatore < ric->quantita * ordine->numero) {
                     if (stoc->scadenza <= tempo) { // ingrediente scaduto: va rimosso
-                        s_stoccaggio *da_eliminare = stoc;
-                        stoc = stoc->next;
-                        ingrediente_nel_magazzino->stoccaggio = stoc;
-                        if (stoc != NULL)
-                            stoc->prev = NULL;
-                        free(da_eliminare);
+                        stoc = elimina_stoc_scaduto(stoc, ingrediente_nel_magazzino);
                     } else {
                         accumulatore += stoc->qta;
                         stoc = stoc->next;
@@ -848,6 +853,16 @@ void check_ordini() {
 
         inserisci_in_ordine_di_tempo(cur);
     }
+}
+
+s_stoccaggio *elimina_stoc_scaduto(s_stoccaggio *stoc, s_magazzino *ingrediente_nel_magazzino) {
+    s_stoccaggio *da_eliminare = stoc;
+    stoc = stoc->next;
+    ingrediente_nel_magazzino->stoccaggio = stoc;
+    if (stoc != NULL)
+        stoc->prev = NULL;
+    free(da_eliminare);
+    return stoc;
 }
 
 void inserisci_in_ordine_di_tempo(s_ordini *ordine) {
