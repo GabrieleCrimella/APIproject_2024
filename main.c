@@ -4,6 +4,11 @@
 
 #define MAX 255
 
+typedef enum {
+    ROSSO,
+    NERO
+} colore;
+
 typedef struct stoc_ingredienti {
     unsigned int qta;
     unsigned int scadenza;
@@ -26,6 +31,7 @@ typedef struct ricetta {
     char *nome_ricetta;
     s_ingrediente *ingredienti;
     struct ricetta *left, *right, *p;
+    colore c;
 } s_ricette;
 
 typedef struct ordini {
@@ -104,6 +110,12 @@ void cambia_ref_ordini(s_ricette *r1, s_ricette *r2);
 
 s_stoccaggio *elimina_stoc_scaduto(s_stoccaggio *stoc, s_magazzino *ingrediente_nel_magazzino);
 
+void riparaRB_inserisci_ricetta(s_ricette *);
+
+void riparaRB_rimozione_ricetta(s_ricette *x);
+
+void togli_scaduti();
+
 s_ordini *ordini_testa = NULL, *ordini_coda = NULL;
 // anche questa la gestisco come coda: inserisco in coda e prelevo dalla testa, così ho accesso in O(1) e la tengo intrinsecamente in ordine cronologico
 s_ordini *coda_della_coda = NULL, *testa_della_coda = NULL; // gli ultimi due fanno riferimento alla coda. inserisco in coda, prelevo dalla testa
@@ -157,6 +169,9 @@ int main() {
         if (tempo % periodo == 0) {
             corriere();
         }
+        /*if (tempo % (unsigned int) (periodo / 3) == 0)
+            togli_scaduti();
+            */
     }
 
     rimuovi_ricettario(ricettario);
@@ -310,6 +325,7 @@ void aggiungi_ricetta(char ricetta[MAX + 1], char ingrediente[MAX + 1]) {
     else
         pre->right = x;
     ingredienti = x->ingredienti;
+    riparaRB_inserisci_ricetta(x);
     do {
         acquisisci_comando(ingrediente);
         if (stop != 1)
@@ -317,6 +333,11 @@ void aggiungi_ricetta(char ricetta[MAX + 1], char ingrediente[MAX + 1]) {
         if (strcmp(ingrediente, "aggiungi_ricetta") != 0 && strcmp(ingrediente, "rimuovi_ricetta") != 0 &&
             strcmp(ingrediente, "rifornimento") != 0 && strcmp(ingrediente, "ordine") != 0) {
             ingredienti->next = (s_ingrediente *) malloc(sizeof(s_ingrediente));
+            if (ingredienti->next == NULL) {
+                free(x->nome_ricetta);
+                free(x);
+                return;
+            }
             ingredienti = ingredienti->next;
             ingredienti->ref_magazzino = aggiungi_solo_ricetta_a_magazzino(ingrediente);
             ingredienti->next = NULL;
@@ -398,6 +419,10 @@ void rimuovi_ricetta_da_ricettario(s_ricette *x) {
         dealloca_ingredienti(da_canc->ingredienti);
         free(da_canc->nome_ricetta);
     }
+
+    if (da_canc->c == NERO)
+        riparaRB_rimozione_ricetta(sottoa);
+
     free(da_canc);
 }
 
@@ -469,8 +494,12 @@ void aggiungi_rifornimento_a_magazzino(const char *ingrediente, int quantita, in
         precedente = NULL;
 
         while (attuale != NULL && attuale->scadenza < scadenza) { // cerco dove inserire
-            precedente = attuale;
-            attuale = attuale->next;
+            if (attuale->scadenza <= tempo) {
+                attuale = elimina_stoc_scaduto(attuale, cur);
+            } else {
+                precedente = attuale;
+                attuale = attuale->next;
+            }
         }
 
         if (attuale != NULL && attuale->scadenza == scadenza) {
@@ -805,13 +834,11 @@ void check_ordini() {
             ingrediente_nel_magazzino = ric->ref_magazzino;
             if (ingrediente_nel_magazzino != NULL) {
                 stoc = ingrediente_nel_magazzino->stoccaggio;
-                while (stoc != NULL && accumulatore < ric->quantita * ordine->numero) {
-                    if (stoc->scadenza <= tempo) { // ingrediente scaduto: va rimosso
-                        stoc = elimina_stoc_scaduto(stoc, ingrediente_nel_magazzino);
-                    } else {
+                unsigned int richiesta_totale = ric->quantita * ordine->numero;
+                while (stoc != NULL && accumulatore < richiesta_totale) {
+                    if (stoc->scadenza > tempo)
                         accumulatore += stoc->qta;
-                        stoc = stoc->next;
-                    }
+                    stoc = stoc->next;
                 }
                 if (accumulatore < ric->quantita * ordine->numero) { // non posso ancora gestire l'ordine
                     prec = ordine;
@@ -855,6 +882,31 @@ void check_ordini() {
     }
 }
 
+void togli_scaduti() {
+    s_ingrediente *ric;
+    s_stoccaggio *stoc;
+    s_ordini *ordine = testa_della_coda;
+    s_magazzino *ingrediente_nel_magazzino;
+    while (ordine != NULL) {
+        ric = ordine->ref_ricetta->ingredienti;
+        while (ric != NULL) {
+            ingrediente_nel_magazzino = ric->ref_magazzino;
+            if (ingrediente_nel_magazzino != NULL) {
+                stoc = ingrediente_nel_magazzino->stoccaggio;
+                while (stoc != NULL) {
+                    if (stoc->scadenza <= tempo) { // ingrediente scaduto: va rimosso
+                        stoc = elimina_stoc_scaduto(stoc, ingrediente_nel_magazzino);
+                    } else {
+                        break;
+                    }
+                }
+            }
+            ric = ric->next;
+        }
+        ordine = ordine->next;
+    }
+}
+
 s_stoccaggio *elimina_stoc_scaduto(s_stoccaggio *stoc, s_magazzino *ingrediente_nel_magazzino) {
     s_stoccaggio *da_eliminare = stoc;
     stoc = stoc->next;
@@ -893,4 +945,150 @@ void aggiungi_in_coda(s_ordini *ordine) {
         coda_della_coda->next = ordine;
         coda_della_coda = ordine;
     }
+}
+
+void rotazione_sx_ricetta(s_ricette *x) {
+    s_ricette *y = x->right;
+    x->right = y->left;
+
+    if (x->right != NULL)
+        x->right->p = x;
+
+    y->p = x->p;
+
+    if (x->p == NULL)
+        ricettario = y;
+    else if (x == x->p->left)
+        x->p->left = y;
+    else x->p->right = y;
+
+    y->left = x;
+    x->p = y;
+}
+
+void rotazione_dx_ricetta(s_ricette *y) {
+    s_ricette *x = y->left;
+    y->left = x->right;
+
+    if (x->right != NULL)
+        x->right->p = y;
+
+    x->p = y->p;
+
+    if (x->p == NULL)
+        ricettario = x;
+    else if (y == y->p->left)
+        y->p->left = x;
+    else y->p->right = x;
+
+    x->right = y;
+    y->p = x;
+}
+
+void riparaRB_inserisci_ricetta(s_ricette *x) {
+    s_ricette *y;
+
+    while (x != ricettario && x->p->c == ROSSO) {
+        if (x->p == x->p->p->left) {
+            y = x->p->p->right;
+            if (y != NULL && y->c == ROSSO) {
+                x->p->c = NERO;
+                y->c = NERO;
+                x->p->p->c = ROSSO;
+                x = x->p->p;
+            } else {
+                if (x == x->p->right) {
+                    x = x->p;
+                    rotazione_sx_ricetta(x);
+                }
+                x->p->c = NERO;
+                x->p->p->c = ROSSO;
+                rotazione_dx_ricetta(x->p->p);
+            }
+        } else {
+            y = x->p->p->left;
+            if (y != NULL && y->c == ROSSO) {
+                x->p->c = NERO;
+                y->c = NERO;
+                x->p->p->c = ROSSO;
+                x = x->p->p;
+            } else {
+                if (x == x->p->left) {
+                    x = x->p;
+                    rotazione_dx_ricetta(x);
+                }
+                x->p->c = NERO;
+                x->p->p->c = ROSSO;
+                rotazione_sx_ricetta(x->p->p);
+            }
+        }
+    }
+    ricettario->c = NERO;
+}
+
+void riparaRB_rimozione_ricetta(s_ricette *x) {
+    s_ricette *w = NULL; // Inizializza w a NULL
+
+    while (x != ricettario && x != NULL && x->c == NERO) {
+        if (x->p != NULL && x == x->p->left) {
+            w = x->p->right;
+            if (w != NULL && w->c == ROSSO) {
+                w->c = NERO;
+                x->p->c = ROSSO;
+                rotazione_sx_ricetta(x->p);
+                w = x->p->right;
+            }
+            if ((w == NULL || (w->left == NULL || w->left->c == NERO)) &&
+                (w == NULL || (w->right == NULL || w->right->c == NERO))) {
+                if (w != NULL)
+                    w->c = ROSSO;
+                x = (x->p != NULL) ? x->p : NULL;
+            } else {
+                if (w != NULL && (w->right == NULL || w->right->c == NERO)) {
+                    if (w->left != NULL)
+                        w->left->c = NERO;
+                    w->c = ROSSO;
+                    rotazione_dx_ricetta(w);
+                    w = x->p->right;
+                }
+                if (w != NULL)
+                    w->c = x->p->c;
+                x->p->c = NERO;
+                if (w->right != NULL)
+                    w->right->c = NERO;
+                rotazione_sx_ricetta(x->p);
+                x = ricettario;
+            }
+        } else {
+            if (x->p != NULL) w = x->p->left;
+            if (w != NULL && w->c == ROSSO) {
+                w->c = NERO;
+                x->p->c = ROSSO;
+                rotazione_dx_ricetta(x->p);
+                w = x->p->left;
+            }
+            if ((w == NULL || (w->right == NULL || w->right->c == NERO)) &&
+                (w == NULL || (w->left == NULL || w->left->c == NERO))) {
+                if (w != NULL)
+                    w->c = ROSSO;
+                x = (x->p != NULL) ? x->p : NULL;
+            } else {
+                if (w != NULL && (w->left == NULL || w->left->c == NERO)) {
+                    if (w->right != NULL)
+                        w->right->c = NERO;
+                    w->c = ROSSO;
+                    rotazione_sx_ricetta(w);
+                    w = x->p->left;
+                }
+                if (w != NULL)
+                    w->c = x->p->c;
+                x->p->c = NERO;
+                if (w->left != NULL)
+                    w->left->c = NERO;
+                rotazione_dx_ricetta(x->p);
+                x = ricettario;
+            }
+        }
+    }
+    if (x != NULL) x->c = NERO;
 }
