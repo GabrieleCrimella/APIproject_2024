@@ -52,4 +52,5 @@ The program outputs the state of orders in the courier's truck at specific inter
 
 ## Author
 - Gabriele Crimella, developed as part of the Final Exam for Algorithms and Data Structures 2023-2024.
+- Final evaluation: 30 _cum laude_.
 
