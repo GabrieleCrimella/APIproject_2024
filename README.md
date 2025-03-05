@@ -50,6 +50,6 @@ The program outputs the state of orders in the courier's truck at specific inter
 - Orders are loaded into the courier truck by weight, prioritizing older orders if weights are equal.
 - Simulation ends after the last command is executed.
 
-## Authors
-- Developed as part of the Final Exam for Algorithms and Data Structures 2023-2024.
+## Author
+- Gabriele Crimella, developed as part of the Final Exam for Algorithms and Data Structures 2023-2024.
 
